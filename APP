@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Интерфейс для ИИ — чаты + файлы</title>
+    <!-- #################### CSS НАЧАЛО #################### -->
+    <style>
+        /* Сброс отступов, чтобы градиент занимал весь экран */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            /* ГРАДИЕНТНЫЙ ФОН – меняйте углы и цвета здесь */
+            background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .app-container {
+            width: 90%;
+            max-width: 1400px;
+            height: 90vh;
+            background-color: rgba(255, 255, 255, 0.4);
+            border-radius: 24px;
+            backdrop-filter: blur(2px);
+            display: flex;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* ЛЕВАЯ ПАНЕЛЬ */
+        .chats-sidebar {
+            width: 260px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(4px);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            padding: 20px 12px;
+        }
+
+        .chats-sidebar h3 {
+            margin-bottom: 16px;
+            font-weight: 600;
+            color: #1f2b3c;
+        }
+
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .chat-item {
+            background: white;
+            border-radius: 16px;
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .chat-item:hover {
+            background: #e9edf2;
+            transform: translateX(3px);
+        }
+
+        .chat-item.active {
+            background: #d9e4f5;
+            border-left: 4px solid #3a6ea5;
+            font-weight: 500;
+        }
+
+        .chat-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+            font-size: 0.95rem;
+        }
+
+        /* Кнопки действий в чате (редактировать, удалить) */
+        .chat-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .edit-chat, .delete-chat {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            width: 24px;
+            height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            transition: 0.1s;
+        }
+
+        .edit-chat:hover {
+            background: #d0e0f0;
+            color: #2c5a7a;
+        }
+
+        .delete-chat:hover {
+            background: #ffdddd;
+            color: red;
+        }
+
+        .new-chat-btn {
+            margin-top: 20px;
+            background: #2c5a7a;
+            border: none;
+            padding: 10px;
+            border-radius: 40px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .new-chat-btn:hover {
+            background: #1f405b;
+        }
+
+        /* ПРАВАЯ ОБЛАСТЬ */
+        .main-chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .messages-window {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(4px);
+            border-radius: 24px;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 10px 16px;
+            border-radius: 20px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background: #2c5a7a;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .ai-message {
+            align-self: flex-start;
+            background: #eef2f7;
+            color: #1f2b3c;
+            border-bottom-left-radius: 4px;
+        }
+
+        /* Стили для вложенных файлов */
+        .file-attachment {
+            margin-top: 6px;
+            padding: 6px 10px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            flex-wrap: wrap;
+        }
+        .file-attachment a {
+            color: inherit;
+            text-decoration: none;
+            border-bottom: 1px dashed;
+        }
+        .file-attachment img.preview-img {
+            max-width: 150px;
+            max-height: 100px;
+            border-radius: 8px;
+            margin-top: 4px;
+        }
+        .file-icon {
+            font-size: 1.2rem;
+        }
+
+        /* Панель ввода */
+        .input-panel {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(4px);
+            border-radius: 48px;
+            padding: 8px 16px;
+        }
+
+        .query-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 14px 12px;
+            font-size: 1rem;
+            resize: none;
+            outline: none;
+            font-family: inherit;
+            max-height: 120px;
+        }
+
+        /* Кнопки */
+        .btn {
+            background: #2c5a7a;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn:hover {
+            background: #1f405b;
+            transform: scale(0.96);
+        }
+        .btn-clear {
+            background: #6c7a89;
+        }
+        .btn-clear:hover {
+            background: #4e5a68;
+        }
+        .file-btn {
+            background: #4a6f8f;
+            padding: 10px 14px;
+        }
+
+        /* скролл */
+        .messages-window::-webkit-scrollbar {
+            width: 6px;
+        }
+        .messages-window::-webkit-scrollbar-track {
+            background: #ddd;
+            border-radius: 10px;
+        }
+        .messages-window::-webkit-scrollbar-thumb {
+            background: #2c5a7a;
+            border-radius: 10px;
+        }
+    </style>
+    <!-- #################### CSS КОНЕЦ #################### -->
+</head>
+<body>
+
+<!-- #################### HTML НАЧАЛО #################### -->
+<div class="app-container">
+    <!-- Левая панель: список чатов -->
+    <div class="chats-sidebar">
+        <h3>💬 Мои чаты</h3>
+        <div class="chat-list" id="chatList">
+            <!-- чаты будут добавляться динамически через JS -->
+        </div>
+        <button class="new-chat-btn" id="newChatBtn">➕ Новый чат</button>
+    </div>
+
+    <!-- Правая область: диалог с ИИ -->
+    <div class="main-chat-area">
+        <div class="messages-window" id="messagesWindow">
+            <!-- сообщения текущего чата -->
+        </div>
+
+        <div class="input-panel">
+            <!-- Кнопка прикрепления файла (НОВОЕ) -->
+            <button class="btn file-btn" id="attachFileBtn" title="Прикрепить файл">📎</button>
+            <textarea class="query-input" id="queryInput" rows="1" placeholder="Задайте вопрос ИИ..."></textarea>
+            <button class="btn" id="sendBtn">➤ Отправить</button>
+            <button class="btn btn-clear" id="clearChatBtn">🗑 Очистить</button>
+        </div>
+    </div>
+</div>
+<!-- #################### HTML КОНЕЦ #################### -->
+
+<!-- #################### JS НАЧАЛО #################### -->
+<script>
+    // ---------- Модель данных ----------
+    let chats = [
+        { id: 'chat1', name: 'Чат 1', messages: [] },
+        { id: 'chat2', name: 'Чат 2', messages: [] }
+    ];
+    let activeChatId = 'chat1';
+
+    // Вспомогательные функции
+    function saveChats() {
+        localStorage.setItem('ai_chats', JSON.stringify(chats));
+    }
+
+    function loadChats() {
+        const saved = localStorage.getItem('ai_chats');
+        if (saved) {
+            try {
+                chats = JSON.parse(saved);
+                if (!chats.length) chats = [{ id: 'chat1', name: 'Чат 1', messages: [] }];
+            } catch(e) { console.warn(e); }
+        } else {
+            if (chats[0].messages.length === 0) {
+                chats[0].messages.push({ role: 'ai', text: 'Привет! Я ИИ-помощник. Задай любой вопрос или пришли файл.' });
+            }
+            if (chats[1].messages.length === 0) {
+                chats[1].messages.push({ role: 'ai', text: 'Это второй чат. Можно обмениваться файлами.' });
+            }
+        }
+        activeChatId = chats[0].id;
+        saveChats();
+    }
+
+    // --- Рендер списка чатов с кнопкой редактирования ---
+    function renderChatList() {
+        const container = document.getElementById('chatList');
+        if (!container) return;
+        container.innerHTML = '';
+        chats.forEach(chat => {
+            const chatDiv = document.createElement('div');
+            chatDiv.className = `chat-item ${activeChatId === chat.id ? 'active' : ''}`;
+            chatDiv.innerHTML = `
+                <span class="chat-name">${escapeHtml(chat.name)}</span>
+                <div class="chat-actions">
+                    <button class="edit-chat" data-id="${chat.id}" title="Редактировать имя">✏️</button>
+                    <button class="delete-chat" data-id="${chat.id}" title="Удалить чат">🗑</button>
+                </div>
+            `;
+            // Клик по всей области (кроме кнопок) – переключение чата
+            chatDiv.addEventListener('click', (e) => {
+                if (e.target.classList.contains('edit-chat') || e.target.classList.contains('delete-chat')) return;
+                setActiveChat(chat.id);
+            });
+            // Редактирование имени
+            const editBtn = chatDiv.querySelector('.edit-chat');
+            editBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                editChatName(chat.id);
+            });
+            // Удаление чата
+            const delBtn = chatDiv.querySelector('.delete-chat');
+            delBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteChat(chat.id);
+            });
+            container.appendChild(chatDiv);
+        });
+    }
+
+    // НОВОЕ: изменение имени чата
+    function editChatName(chatId) {
+        const chat = chats.find(c => c.id === chatId);
+        if (!chat) return;
+        const newName = prompt("Введите новое название чата:", chat.name);
+        if (newName && newName.trim() !== "") {
+            chat.name = newName.trim();
+            saveChats();
+            renderChatList();
+        }
+    }
+
+    function deleteChat(chatId) {
+        if (chats.length === 1) {
+            alert("Нельзя удалить последний чат. Создайте новый.");
+            return;
+        }
+        const index = chats.findIndex(c => c.id === chatId);
+        if (index !== -1) {
+            chats.splice(index, 1);
+            if (activeChatId === chatId) activeChatId = chats[0].id;
+            saveChats();
+            renderChatList();
+            renderMessages();
+        }
+    }
+
+    function setActiveChat(chatId) {
+        activeChatId = chatId;
+        renderChatList();
+        renderMessages();
+    }
+
+    // --- Отображение сообщений (поддержка файлов) ---
+    function renderMessages() {
+        const container = document.getElementById('messagesWindow');
+        if (!container) return;
+        const currentChat = chats.find(c => c.id === activeChatId);
+        if (!currentChat) return;
+        container.innerHTML = '';
+        currentChat.messages.forEach(msg => {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${msg.role === 'user' ? 'user-message' : 'ai-message'}`;
+            
+            // Если сообщение содержит текст
+            if (msg.text) {
+                const textSpan = document.createElement('div');
+                textSpan.textContent = msg.text;
+                msgDiv.appendChild(textSpan);
+            }
+            // Если есть файл (вложение)
+            if (msg.file) {
+                const fileDiv = document.createElement('div');
+                fileDiv.className = 'file-attachment';
+                fileDiv.innerHTML = renderFileAttachment(msg.file);
+                msgDiv.appendChild(fileDiv);
+            }
+            container.appendChild(msgDiv);
+        });
+        container.scrollTop = container.scrollHeight;
+    }
+
+    // Функция для отображения вложения (изображение или ссылка)
+    function renderFileAttachment(fileData) {
+        const { name, type, dataURL } = fileData;
+        if (type.startsWith('image/')) {
+            return `
+                <span class="file-icon">🖼️</span>
+                <a href="${dataURL}" target="_blank" download="${escapeHtml(name)}">${escapeHtml(name)}</a><br>
+                <img src="${dataURL}" class="preview-img" alt="preview">
+            `;
+        } else {
+            return `
+                <span class="file-icon">📎</span>
+                <a href="${dataURL}" target="_blank" download="${escapeHtml(name)}">${escapeHtml(name)}</a>
+                <span> (${(fileData.size / 1024).toFixed(1)} KB)</span>
+            `;
+        }
+    }
+
+    // Добавление сообщения (текст + опционально файл)
+    function addMessage(role, text, file = null) {
+        const chat = chats.find(c => c.id === activeChatId);
+        if (!chat) return;
+        const msgObj = { role, text: text || '' };
+        if (file) msgObj.file = file;
+        chat.messages.push(msgObj);
+        saveChats();
+        renderMessages();
+    }
+
+    // --- Симуляция ответа ИИ (умеет отвечать на файлы) ---
+    async function getAIResponse(userMessage, hasFile = false, fileName = '') {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                if (hasFile) {
+                    resolve(`Спасибо за файл "${fileName}". Я его получил, но пока не умею анализировать содержимое. Задайте вопрос по файлу или отправьте текст.`);
+                } else {
+                    let reply = `Вы сказали: "${userMessage}".\nЯ - демонстрационный ИИ. Ваш запрос принят.`;
+                    if (userMessage.toLowerCase().includes('привет')) {
+                        reply = "Привет-привет! Рад видеть тебя в новом чат-интерфейсе 🌟 Прикрепляй файлы!";
+                    } else if (userMessage.toLowerCase().includes('как дела')) {
+                        reply = "У меня отлично! Градиент на фоне красивый, а теперь можно и файлы отправлять.";
+                    }
+                    resolve(reply);
+                }
+            }, 400);
+        });
+    }
+
+    // Отправка текстового сообщения
+    async function sendMessage() {
+        const inputEl = document.getElementById('queryInput');
+        const userText = inputEl.value.trim();
+        if (!userText) return;
+        inputEl.value = '';
+        addMessage('user', userText);
+        const aiReply = await getAIResponse(userText, false);
+        addMessage('ai', aiReply);
+        autoResizeTextarea(inputEl);
+    }
+
+    // НОВОЕ: прикрепление файла
+    function attachFile() {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            // Читаем файл как Data URL (для предпросмотра/скачивания)
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const dataURL = event.target.result;
+                const fileData = {
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    dataURL: dataURL
+                };
+                // Отправляем сообщение пользователя с файлом (текст может быть пустым)
+                addMessage('user', '', fileData);
+                // ИИ отвечает, что получил файл
+                const aiReply = await getAIResponse('', true, file.name);
+                addMessage('ai', aiReply);
+            };
+            reader.readAsDataURL(file);
+        };
+        fileInput.click();
+    }
+
+    // Очистка текущего чата
+    function clearCurrentChat() {
+        const chat = chats.find(c => c.id === activeChatId);
+        if (chat && confirm("Очистить всю историю этого чата?")) {
+            chat.messages = [];
+            chat.messages.push({ role: 'ai', text: 'История очищена. Задайте новый вопрос или пришлите файл.' });
+            saveChats();
+            renderMessages();
+        }
+    }
+
+    // Создать новый чат
+    function createNewChat() {
+        const newId = 'chat_' + Date.now();
+        const newName = `Чат ${chats.length + 1}`;
+        const newChat = {
+            id: newId,
+            name: newName,
+            messages: [{ role: 'ai', text: 'Новый чат. Пишите текст или прикрепляйте файлы.' }]
+        };
+        chats.push(newChat);
+        activeChatId = newId;
+        saveChats();
+        renderChatList();
+        renderMessages();
+    }
+
+    // Защита от XSS
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function autoResizeTextarea(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    }
+
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', () => {
+        loadChats();
+        renderChatList();
+        renderMessages();
+
+        const sendBtn = document.getElementById('sendBtn');
+        const clearBtn = document.getElementById('clearChatBtn');
+        const newChatBtn = document.getElementById('newChatBtn');
+        const attachBtn = document.getElementById('attachFileBtn');
+        const inputArea = document.getElementById('queryInput');
+
+        sendBtn.addEventListener('click', sendMessage);
+        clearBtn.addEventListener('click', clearCurrentChat);
+        newChatBtn.addEventListener('click', createNewChat);
+        attachBtn.addEventListener('click', attachFile);
+
+        inputArea.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        inputArea.addEventListener('input', function() { autoResizeTextarea(this); });
+        autoResizeTextarea(inputArea);
+    });
+</script>
+<!-- #################### JS КОНЕЦ #################### -->
+</body>
+</html>
